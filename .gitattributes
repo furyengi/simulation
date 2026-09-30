@@ -4,3 +4,4 @@
 
 # Reference data is committed byte-for-byte from its source.
 validation/**/reference/** -text
+packages/environment/data/fixtures/** -text

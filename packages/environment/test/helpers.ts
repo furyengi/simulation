@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { Instant } from '@simulation/physics';
+import { type Instant } from '@simulation/physics';
 import { ResourceCache } from '../src/providers/cache';
 import type { Fetcher } from '../src/providers/http';
 

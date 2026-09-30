@@ -1,6 +1,6 @@
 import { Instant } from '@simulation/physics';
 import { OmmRecordSchema, type OrbitalElementSet, type ProviderStatus } from '@simulation/schemas';
-import { ResourceCache, type LoadedResource } from './cache';
+import { type ResourceCache, type LoadedResource } from './cache';
 import { statusFromResource } from './status';
 
 /**
