@@ -208,6 +208,23 @@ export async function buildApp(env: Environment, opts: AppOptions = {}): Promise
     };
   });
 
+  app.get('/api/environment/bodies-window', async (req) => {
+    const b = z
+      .object({
+        start: TimeParam,
+        count: z.coerce.number().int().min(2).max(20_000).default(120),
+        stepSeconds: z.coerce.number().positive().default(60),
+      })
+      .parse(req.query);
+    return env.windows.bodies({
+      start: inst(b.start) ?? env.clock.now(),
+      count: b.count,
+      stepSeconds: b.stepSeconds,
+    });
+  });
+
+  app.get('/api/ground-stations', async () => env.groundStations.list());
+
   // ---- orbital objects ---------------------------------------------------------------------
   app.get('/api/orbital/objects', async (req) => {
     const q = z
@@ -249,7 +266,12 @@ export async function buildApp(env: Environment, opts: AppOptions = {}): Promise
       .object({
         ids: z.array(z.string()).min(1).max(2000),
         start: TimeParam,
-        count: z.number().int().min(2).max(20_000),
+        count: z.number().int().min(2).max(20_000).optional(),
+        durationSeconds: z
+          .number()
+          .positive()
+          .max(10 * 86_400)
+          .optional(),
         frame: FrameIdSchema.default('GCRF'),
         stepSeconds: z.number().positive().optional(),
         toleranceMeters: z.number().positive().optional(),
@@ -258,7 +280,8 @@ export async function buildApp(env: Environment, opts: AppOptions = {}): Promise
     return env.orbital.ephemerisBatch({
       ids: b.ids,
       start: inst(b.start) ?? env.clock.now(),
-      count: b.count,
+      ...(b.count !== undefined ? { count: b.count } : {}),
+      ...(b.durationSeconds !== undefined ? { durationSeconds: b.durationSeconds } : {}),
       frame: b.frame,
       ...(b.stepSeconds !== undefined ? { stepSeconds: b.stepSeconds } : {}),
       ...(b.toleranceMeters !== undefined ? { toleranceM: b.toleranceMeters } : {}),

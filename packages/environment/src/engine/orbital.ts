@@ -210,13 +210,18 @@ export class OrbitalService {
   ephemerisBatch(req: {
     ids: readonly string[];
     start: Instant;
-    count: number;
+    /** Number of samples; or give `durationSeconds` and let the engine size the step and count. */
+    count?: number;
+    durationSeconds?: number;
     frame: FrameId;
     stepSeconds?: number;
     toleranceM?: number;
   }): EnvResult<{ windows: EphemerisWindow[]; stepSeconds: number }> {
-    const { ids, start, count, frame } = req;
-    if (count < 2 || count > 20_000) {
+    const { ids, start, frame } = req;
+    if (req.count === undefined && req.durationSeconds === undefined) {
+      return unsupported('BAD_WINDOW', 'give count or durationSeconds');
+    }
+    if (req.count !== undefined && (req.count < 2 || req.count > 20_000)) {
       return unsupported('BAD_WINDOW', 'count must be between 2 and 20000');
     }
     const tol = req.toleranceM ?? 10;
@@ -233,6 +238,8 @@ export class OrbitalService {
         }),
       );
     if (!Number.isFinite(step) || step <= 0) return unsupported('BAD_STEP', 'invalid step');
+    const count =
+      req.count ?? Math.min(20_000, Math.max(2, Math.ceil((req.durationSeconds ?? 0) / step) + 1));
 
     const pos = ids.map(() => new Array<number>(count * 3).fill(0));
     const vel = ids.map(() => new Array<number>(count * 3).fill(0));

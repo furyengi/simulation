@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "@simulation/physics",
   "version": "0.1.0",
   "private": true,
@@ -6,7 +6,8 @@
   "license": "Apache-2.0",
   "description": "Pure scientific core: time scales, clock, units, reference frames, Earth, ephemerides, SGP4, atmosphere. No I/O.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./time": "./src/time/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

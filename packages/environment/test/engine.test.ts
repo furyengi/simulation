@@ -388,3 +388,47 @@ describe('matrixToQuaternion', () => {
     }
   });
 });
+
+describe('Environment: windows and ground stations', () => {
+  it('bodies window: unit quaternions on the short arc, Sun ≈ 1 au, Moon at lunar distance, earth turns 15°/h', () => {
+    const start = Instant.parse('2026-09-27T12:00:00Z');
+    const w = value(env.windows.bodies({ start, count: 61, stepSeconds: 60 }));
+    expect(w.earthQuaternionsItrfFromGcrf.length).toBe(61 * 4);
+    let prev: number[] | undefined;
+    for (let i = 0; i < 61; i++) {
+      const q = w.earthQuaternionsItrfFromGcrf.slice(4 * i, 4 * i + 4);
+      expect(Math.hypot(...q)).toBeCloseTo(1, 12);
+      if (prev)
+        expect(
+          q[0]! * prev[0]! + q[1]! * prev[1]! + q[2]! * prev[2]! + q[3]! * prev[3]!,
+        ).toBeGreaterThan(0.99999);
+      prev = q;
+    }
+    const sunR = Math.hypot(w.sunItrfM[0]!, w.sunItrfM[1]!, w.sunItrfM[2]!) / 1.495978707e11;
+    expect(sunR).toBeGreaterThan(0.98);
+    expect(sunR).toBeLessThan(1.02);
+    // Over one hour the Sun's ITRF longitude decreases by ≈ 15° (Earth rotation).
+    const lon = (i: number) => Math.atan2(w.sunItrfM[3 * i + 1]!, w.sunItrfM[3 * i]!);
+    const dLon = ((lon(0) - lon(60)) * 180) / Math.PI;
+    expect(dLon).toBeGreaterThan(14.9);
+    expect(dLon).toBeLessThan(15.1);
+    const moonKm = Math.hypot(w.moonItrfM[0]!, w.moonItrfM[1]!, w.moonItrfM[2]!) / 1000;
+    expect(moonKm).toBeGreaterThan(356_000);
+    expect(moonKm).toBeLessThan(407_000);
+  });
+
+  it('bodies window refuses absurd requests', () => {
+    expect(env.windows.bodies({ start: WALL, count: 1, stepSeconds: 60 }).status).toBe(
+      'unsupported',
+    );
+    expect(env.windows.bodies({ start: WALL, count: 10, stepSeconds: -1 }).status).toBe(
+      'unsupported',
+    );
+  });
+
+  it('ground stations carry provenance that states their approximate, curated nature', () => {
+    const r = env.groundStations.list();
+    expect(value(r).length).toBe(3);
+    if (r.status === 'ok') expect(r.provenance[0]!.limitations?.join(' ')).toMatch(/Approximate/);
+  });
+});

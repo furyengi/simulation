@@ -36,6 +36,8 @@ import {
   unavailable,
   unsupported,
   type AircraftLayer,
+  type BodiesWindow,
+  type GroundStation,
   type AtmosphereSample,
   type EarthOrientationWire,
   type EclipseSample,
@@ -601,6 +603,93 @@ export class Environment {
       this.orbitalService.groundTrack(id, start, spanSeconds, stepSeconds),
   };
 
+  // ---- Windows for client-side interpolation ---------------------------------------------
+
+  readonly windows = {
+    /** Earth orientation and Sun/Moon ITRF positions over a span. Sample times are start + i·step. */
+    bodies: (req: {
+      start: Instant;
+      count: number;
+      stepSeconds: number;
+    }): EnvResult<BodiesWindow> => {
+      const { start, count, stepSeconds } = req;
+      if (count < 2 || count > 20_000 || !(stepSeconds > 0)) {
+        return unsupported('BAD_WINDOW', 'count must be 2–20000 and stepSeconds positive');
+      }
+      const q = new Array<number>(count * 4);
+      const sun = new Array<number>(count * 3);
+      const moon = new Array<number>(count * 3);
+      for (let i = 0; i < count; i++) {
+        const t = start.plusSeconds(i * stepSeconds);
+        const o = this.frames.orientation(t);
+        const quat = matrixToQuaternion(o.itrfFromGcrf);
+        // Keep successive quaternions in the same hemisphere so interpolation takes the short arc.
+        if (
+          i > 0 &&
+          quat[0] * q[4 * (i - 1)]! +
+            quat[1] * q[4 * (i - 1) + 1]! +
+            quat[2] * q[4 * (i - 1) + 2]! +
+            quat[3] * q[4 * (i - 1) + 3]! <
+            0
+        ) {
+          for (let k = 0; k < 4; k++) quat[k] = -quat[k]!;
+        }
+        q.splice(4 * i, 4, ...quat);
+        const s = this.bodyGcrf('sun', t);
+        const m = this.bodyGcrf('moon', t);
+        if (s.status !== 'ok' || m.status !== 'ok')
+          return unsupported('EPHEMERIS_UNAVAILABLE', 'Sun/Moon ephemeris failed');
+        const sI = vec(this.frames.convertPosition(s.state.position, 'ITRF', t));
+        const mI = vec(this.frames.convertPosition(m.state.position, 'ITRF', t));
+        sun.splice(3 * i, 3, ...sI);
+        moon.splice(3 * i, 3, ...mI);
+      }
+      const prov = [
+        this.eopProvenance(start),
+        this.bodyProvenance('sun', start, 'ITRF', 'astrometric'),
+        this.bodyProvenance('moon', start, 'ITRF', 'geometric'),
+      ];
+      return ok(
+        {
+          startUtc: start.toIso(),
+          stepSeconds,
+          count,
+          earthQuaternionsItrfFromGcrf: q,
+          sunItrfM: sun,
+          moonItrfM: moon,
+        },
+        ...prov,
+      );
+    },
+  };
+
+  // ---- Ground stations -------------------------------------------------------------------
+
+  readonly groundStations = {
+    /** A small curated reference set: NASA Deep Space Network complexes (approximate public coordinates). */
+    list: (): EnvResult<GroundStation[]> =>
+      ok(
+        GROUND_STATIONS.map((g) => ({ ...g })),
+        makeProvenance({
+          subject: 'ground-stations',
+          stateKind: 'OBSERVED',
+          source: {
+            provider: 'nasa-dsn-public-site-descriptions',
+            dataset: 'DSN complex coordinates (manually entered)',
+            url: 'https://www.nasa.gov/directorates/somd/space-communications-navigation-program/what-is-the-deep-space-network/',
+            license: 'NASA media usage guidelines (factual site coordinates)',
+          },
+          simulationTime: this.clock.now(),
+          freshness: 'UNKNOWN',
+          limitations: [
+            'Approximate site coordinates (about ±0.01°) transcribed from public descriptions; not survey-grade.',
+            'Ellipsoidal height is not specified and is set to 0.',
+            'Static reference data; not a full network or an operational status.',
+          ],
+        }),
+      ),
+  };
+
   // ---- Aircraft --------------------------------------------------------------------------
 
   /**
@@ -678,6 +767,33 @@ export class Environment {
     },
   };
 }
+
+const GROUND_STATIONS: readonly GroundStation[] = [
+  {
+    id: 'dsn:goldstone',
+    name: 'Goldstone DSCC',
+    network: 'NASA DSN',
+    latDeg: 35.4267,
+    lonDeg: -116.89,
+    heightM: 0,
+  },
+  {
+    id: 'dsn:madrid',
+    name: 'Madrid DSCC',
+    network: 'NASA DSN',
+    latDeg: 40.4314,
+    lonDeg: -4.2481,
+    heightM: 0,
+  },
+  {
+    id: 'dsn:canberra',
+    name: 'Canberra DSCC',
+    network: 'NASA DSN',
+    latDeg: -35.4014,
+    lonDeg: 148.9831,
+    heightM: 0,
+  },
+];
 
 function readManifest(dir: string): Record<string, string> {
   try {

@@ -54,6 +54,26 @@ export default tseslint.config(
   {
     files: ['apps/web/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser } },
+    rules: {
+      // The browser is a renderer, never the simulation engine (ADR 0002): it may use only the pure
+      // clock helper from the physics package, never its scientific modules.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@simulation/physics',
+              message:
+                'The web app must not import the physics core. Use @simulation/physics/time only.',
+            },
+            {
+              name: '@simulation/environment',
+              message: 'The web app must not import the engine. Talk to the server API.',
+            },
+          ],
+        },
+      ],
+    },
   },
   prettier,
 );

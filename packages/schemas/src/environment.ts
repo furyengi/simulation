@@ -303,3 +303,31 @@ export const AircraftLayerSchema = z.object({
   coverageNotice: z.string(),
 });
 export type AircraftLayer = z.infer<typeof AircraftLayerSchema>;
+
+// ---- Bodies window (Earth orientation, Sun, Moon) for client interpolation -----------------
+
+/**
+ * Engine-computed samples of Earth orientation and the Sun/Moon geocentric positions, for the
+ * viewer to interpolate between. Sample i is at `startUtc + i·stepSeconds`.
+ */
+export const BodiesWindowSchema = z.object({
+  startUtc: IsoUtcSchema,
+  stepSeconds: z.number(),
+  count: z.number().int(),
+  /** Flat [x,y,z,w, …]: unit quaternions rotating GCRF coordinates into ITRF coordinates. */
+  earthQuaternionsItrfFromGcrf: z.array(z.number()),
+  /** Flat [x,y,z, …]: geocentric positions in ITRF, metres. Sun: astrometric; Moon: geometric. */
+  sunItrfM: z.array(z.number()),
+  moonItrfM: z.array(z.number()),
+});
+export type BodiesWindow = z.infer<typeof BodiesWindowSchema>;
+
+export const GroundStationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  network: z.string(),
+  latDeg: z.number(),
+  lonDeg: z.number(),
+  heightM: z.number(),
+});
+export type GroundStation = z.infer<typeof GroundStationSchema>;

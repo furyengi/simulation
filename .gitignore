@@ -11,7 +11,7 @@ coverage/
 !.env.example
 
 # Runtime caches written by the server (external provider responses)
-/.simulation-cache/
+.simulation-cache/
 
 # OS / editor
 .DS_Store

@@ -2,6 +2,17 @@ import { fileURLToPath } from 'node:url';
 import { Environment, loadConfig } from '@simulation/environment';
 import { buildApp } from './app';
 
+// Load .env from the working directory if present (never committed; see .env.example).
+// (npm workspaces run with cwd = apps/server, so also look in the repository root.)
+for (const path of ['.env', fileURLToPath(new URL('../../../.env', import.meta.url))]) {
+  try {
+    process.loadEnvFile(path);
+    break;
+  } catch {
+    /* not there: try the next location, or rely on the process environment */
+  }
+}
+
 const config = loadConfig(process.env);
 const host = process.env.SIM_SERVER_HOST ?? '127.0.0.1';
 const port = Number(process.env.SIM_SERVER_PORT ?? 8787);
