@@ -1,0 +1,16 @@
+﻿{
+  "name": "@simulation/validation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "Reproducible validation cases comparing Simulation against authoritative reference results.",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@simulation/environment": "*",
+    "@simulation/physics": "*",
+    "@simulation/schemas": "*"
+  }
+}

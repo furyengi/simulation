@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+package-lock.json
+LICENSE
+# Reference data is committed verbatim from its source; never reformat it.
+**/data/**
+validation/**/reference/**
+*.csv
+*.tle

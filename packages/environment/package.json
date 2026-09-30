@@ -1,0 +1,19 @@
+﻿{
+  "name": "@simulation/environment",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "Environment engine: composes physics + replaceable data providers into the canonical simulation state and the environment query API.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "bench": "tsx bench/propagation.bench.ts"
+  },
+  "dependencies": {
+    "@simulation/physics": "*",
+    "@simulation/schemas": "*"
+  }
+}

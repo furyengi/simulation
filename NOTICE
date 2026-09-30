@@ -1,0 +1,40 @@
+Simulation
+Copyright 2026 the Simulation contributors
+
+Licensed under the Apache License, Version 2.0.
+
+This product includes or derives from the following third-party works. Each retains its own
+licence; this list is informational.
+
+--------------------------------------------------------------------------------------------------
+IAU SOFA / ERFA algorithms and data
+--------------------------------------------------------------------------------------------------
+packages/physics/src/frames/iau2006.ts and nut00b-data.ts implement algorithms and tabulated
+coefficients published by the International Astronomical Union's Standards of Fundamental Astronomy
+(SOFA) and redistributed as ERFA (https://github.com/liberfa/erfa), BSD-3-Clause:
+
+  Copyright (C) 2013-2023, NumFOCUS Foundation.
+  Derived from SOFA software, Copyright (C) 2013 IAU SOFA Board. All rights reserved.
+
+Reference vectors in packages/physics/test/iau2006.test.ts are taken from the ERFA test suite
+(t_erfa_c.c). This software is not part of the IAU SOFA Software Collection, and is not endorsed
+by the IAU SOFA Board.
+
+--------------------------------------------------------------------------------------------------
+Libraries (installed via npm; not vendored)
+--------------------------------------------------------------------------------------------------
+satellite.js            MIT   SGP4/SDP4 (port of David Vallado's reference implementation)
+astronomy-engine        MIT   Sun and Moon ephemerides (Don Cross)
+nrlmsise-00             Apache-2.0   WebAssembly build of the NRLMSISE-00 atmosphere model
+                                     (model: Picone, Hedin, Drob, Aikin; NRL). C port: Dominik Brodowski
+CesiumJS                Apache-2.0   3D globe visualisation
+zod, fastify, vite, vitest, eslint, prettier, typescript — see package.json
+
+--------------------------------------------------------------------------------------------------
+Data (fetched at run time or included as small, attributed fixtures; see docs/data-sources.md)
+--------------------------------------------------------------------------------------------------
+CelesTrak   GP/OMM orbital element sets, space-weather and EOP CSV compilations
+IERS        Earth Orientation Parameters and leap-second announcements
+GFZ Potsdam Geomagnetic indices Kp/Ap (CC BY 4.0), via CelesTrak's compilation
+NOAA SWPC   Space weather observations and forecasts (US Government work)
+OpenSky Network   Aircraft state vectors — see their terms; attribution displayed in the UI
