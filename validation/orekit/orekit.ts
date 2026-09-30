@@ -4,6 +4,9 @@ import {
   FrameModel,
   Instant,
   Sgp4Propagator,
+  apply,
+  mul,
+  transpose,
   ecefToGeodetic,
   geodetic,
   geodeticToEcef,
@@ -12,6 +15,7 @@ import {
   sub,
   vec,
   type EopLookup,
+  type Mat3,
   type StateVector,
   type Vec3,
 } from '@simulation/physics';
@@ -239,4 +243,32 @@ export function compareGeodetic(): GeoComparison {
     res.n++;
   }
   return res;
+}
+
+/**
+ * The sidereal angle between TEME and the terrestrial intermediate (PEF) frame, as implied by
+ * Orekit's own TEME and ITRF states, minus Simulation's GMST82. Polar motion is removed with
+ * Simulation's matrix (identical inputs), so this isolates the rotation about the pole.
+ */
+export function temeSiderealAngleDifferenceRad(): number {
+  const { states, eops } = loadOrekit();
+  const frames = frameModelWithOrekitEop(eops);
+  let worst = 0;
+  for (const s of states) {
+    if (s.frame !== 'TEME') continue;
+    const it = states.find(
+      (x) => x.name === s.name && x.timeIso === s.timeIso && x.frame === 'ITRF',
+    )!;
+    const o = frames.orientation(Instant.parse(s.timeIso));
+    const c = Math.cos(o.gmst82Rad);
+    const sn = Math.sin(o.gmst82Rad);
+    const r3: Mat3 = [c, sn, 0, -sn, c, 0, 0, 0, 1];
+    const w = mul(o.itrfFromTeme, transpose(r3)); // polar motion only
+    const pef = apply(transpose(w), it.r);
+    const theta = Math.atan2(s.r[1], s.r[0]) - Math.atan2(pef[1], pef[0]);
+    const d =
+      ((((theta - o.gmst82Rad + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
+    worst = Math.max(worst, Math.abs(d));
+  }
+  return worst;
 }
