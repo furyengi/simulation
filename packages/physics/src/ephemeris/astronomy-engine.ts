@@ -10,6 +10,9 @@ export const SUN_RADIUS_M = 6.957e8;
 /** IAU mean lunar radius, m (Archinal et al. 2018: 1737.4 km). */
 export const MOON_RADIUS_M = 1.7374e6;
 
+/** Speed of light, m/s (exact by definition of the metre). */
+export const SPEED_OF_LIGHT_M_S = 299_792_458;
+
 /** Half-width of the central-difference stencil used for velocities, s. */
 const VELOCITY_HALF_STEP_S = 30;
 
@@ -42,13 +45,34 @@ export class AstronomyEngineEphemeris implements Ephemeris {
   readonly accuracyStatement =
     'Analytical theory; typically within ~1 arcminute of JPL DE (see validation/ephemeris for measured values).';
 
-  state(body: BodyId, time: Instant): EphemerisResult {
+  /**
+   * @param lightTime override the body's default convention (Sun: astrometric; Moon: geometric).
+   *   The Moon can be retarded to astrometric; a geometric Sun is not offered because Astronomy
+   *   Engine only exposes the light-time-corrected Sun.
+   */
+  state(body: BodyId, time: Instant, lightTime?: LightTime): EphemerisResult {
     if (body !== 'sun' && body !== 'moon') {
       return { status: 'unsupported', reason: `Body "${String(body)}" is not implemented` };
     }
-    const p = geocentricM(body, time);
-    const before = geocentricM(body, time.plusSeconds(-VELOCITY_HALF_STEP_S));
-    const after = geocentricM(body, time.plusSeconds(VELOCITY_HALF_STEP_S));
+    const convention = lightTime ?? LIGHT_TIME[body];
+    if (body === 'sun' && convention === 'geometric') {
+      return { status: 'unsupported', reason: 'Geometric (non-retarded) Sun is not available' };
+    }
+    const at = (t: Instant): readonly [number, number, number] => {
+      if (body === 'moon' && convention === 'astrometric') {
+        // Retard by the light travel time; two iterations converge to well below a millimetre.
+        let tau = 0;
+        for (let i = 0; i < 2; i++) {
+          const q = geocentricM('moon', t.plusSeconds(-tau));
+          tau = Math.hypot(q[0], q[1], q[2]) / SPEED_OF_LIGHT_M_S;
+        }
+        return geocentricM('moon', t.plusSeconds(-tau));
+      }
+      return geocentricM(body, t);
+    };
+    const p = at(time);
+    const before = at(time.plusSeconds(-VELOCITY_HALF_STEP_S));
+    const after = at(time.plusSeconds(VELOCITY_HALF_STEP_S));
     const k = 1 / (2 * VELOCITY_HALF_STEP_S);
     const state: EphemerisState = {
       body,
@@ -59,7 +83,7 @@ export class AstronomyEngineEphemeris implements Ephemeris {
         (after[1] - before[1]) * k,
         (after[2] - before[2]) * k,
       ]),
-      lightTime: LIGHT_TIME[body],
+      lightTime: convention,
       radiusM: RADIUS_M[body],
     };
     return { status: 'ok', state };

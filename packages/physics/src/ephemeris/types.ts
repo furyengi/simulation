@@ -41,5 +41,5 @@ export interface Ephemeris {
   readonly model: ModelRef;
   /** Human-readable accuracy statement for provenance. */
   readonly accuracyStatement: string;
-  state(body: BodyId, time: Instant): EphemerisResult;
+  state(body: BodyId, time: Instant, lightTime?: LightTime): EphemerisResult;
 }
