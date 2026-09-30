@@ -1,0 +1,40 @@
+name: Generate NRLMSISE-00 reference results
+
+# Builds the original C translation of NRLMSISE-00 (pinned commit) and records its output over a
+# fixed grid. The output is committed to validation/nrlmsise00/reference and compared offline with
+# Simulation's WebAssembly build. Trigger manually.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      NRLMSISE_COMMIT: a5f81be6c8802e9014f94457b41d3484673e0bfb
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the C sources at the pinned commit
+        run: |
+          mkdir -p ref && cd ref
+          for f in nrlmsise-00.c nrlmsise-00.h nrlmsise-00_data.c; do
+            curl -sSLf -o "$f" "https://raw.githubusercontent.com/magnific0/nrlmsise-00/$NRLMSISE_COMMIT/$f"
+          done
+          sha256sum nrlmsise-00.c nrlmsise-00.h nrlmsise-00_data.c | tee ../sources.sha256
+      - name: Build and run the driver
+        run: |
+          cp validation/nrlmsise00/driver.c ref/
+          cd ref
+          gcc --version | head -1
+          gcc -O0 -ffp-contract=off -o driver driver.c nrlmsise-00.c nrlmsise-00_data.c -lm
+          ./driver > ../nrlmsise00-reference.csv
+          wc -l ../nrlmsise00-reference.csv
+          head -5 ../nrlmsise00-reference.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nrlmsise00-reference
+          path: |
+            nrlmsise00-reference.csv
+            sources.sha256
