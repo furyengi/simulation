@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference -- ambient module declaration for an untyped package; must travel with this file
+/// <reference path="./nrlmsise-00.d.ts" />
 import nrlmsiseFactory, { type NrlmsiseModel } from 'nrlmsise-00';
 import { ecefToGeodetic, type Geodetic } from '../earth/wgs84';
 import type { Instant } from '../time/instant';

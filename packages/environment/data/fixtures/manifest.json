@@ -1,0 +1,54 @@
+[
+  {
+    "file": "celestrak-gp-stations.json",
+    "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json",
+    "retrievedAtUtc": "2026-09-30T16:16:31.435Z",
+    "bytes": 9303,
+    "sha256": "b61ed1bcec9c19232239163b225c1d4d3826a1af0c770f91ddb28d11d009f121"
+  },
+  {
+    "file": "celestrak-sw-last5years.csv",
+    "url": "https://celestrak.org/SpaceData/SW-Last5Years.csv",
+    "retrievedAtUtc": "2026-09-30T16:16:36.466Z",
+    "bytes": 93912,
+    "sha256": "3169f90627a1e7ec952bc1fc1cb7b49d40768a05ed2d30013ac5c9aa026e5169",
+    "note": "Trimmed to rows dated 2025-01-01 and later (header kept); columns unchanged."
+  },
+  {
+    "file": "celestrak-eop-last5years.csv",
+    "url": "https://celestrak.org/SpaceData/EOP-Last5Years.csv",
+    "retrievedAtUtc": "2026-09-30T16:16:42.947Z",
+    "bytes": 81529,
+    "sha256": "af62d1f2d1c669ec15df1d459bc4cc2279dafafcfff65d641b9ee59a193f7d99",
+    "note": "Trimmed to rows dated 2025-01-01 and later (header kept); columns unchanged."
+  },
+  {
+    "file": "noaa-f107_cm_flux.json",
+    "url": "https://services.swpc.noaa.gov/json/f107_cm_flux.json",
+    "retrievedAtUtc": "2026-09-30T16:16:43.763Z",
+    "bytes": 22838,
+    "sha256": "51404e926d3f567ff09839f4deff717f5aef00a9496a0b5de8e03c289f4bcfb3"
+  },
+  {
+    "file": "noaa-planetary-k-index.json",
+    "url": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+    "retrievedAtUtc": "2026-09-30T16:16:44.002Z",
+    "bytes": 4718,
+    "sha256": "9119b17862109ef6c3bc8f281a06b05cb8a0a2c15bce641eae1c4fce8fe21584"
+  },
+  {
+    "file": "noaa-planetary_k_index_1m.json",
+    "url": "https://services.swpc.noaa.gov/json/planetary_k_index_1m.json",
+    "retrievedAtUtc": "2026-09-30T16:16:44.264Z",
+    "bytes": 27925,
+    "sha256": "eb0f340ceba2e13cfafceb997be230ea62fa92312fd7659ca8fceaf100638ea3"
+  },
+  {
+    "file": "opensky-states-alps.json",
+    "url": "https://opensky-network.org/api/states/all?lamin=45.8&lomin=5.9&lamax=47.8&lomax=10.5",
+    "retrievedAtUtc": "2026-09-30T16:16:46.252Z",
+    "bytes": 16442,
+    "sha256": "a37fed6afe6332c14075bd4d96aa37314efd516c00bda678da797b035251d373",
+    "note": "Anonymous request for a small Alpine bounding box (1 credit)."
+  }
+]

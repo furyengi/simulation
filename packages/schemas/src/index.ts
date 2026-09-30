@@ -4,3 +4,4 @@ export * from './provenance';
 export * from './result';
 export * from './clock';
 export * from './orbital';
+export * from './environment';
