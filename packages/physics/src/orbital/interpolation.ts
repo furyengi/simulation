@@ -1,3 +1,4 @@
+import type { Instant } from '../time/instant';
 import type { Vec3 } from '../frames/mat3';
 
 /**
@@ -61,3 +62,71 @@ export function suggestedStepSeconds(
 /** Semi-major axis from an orbital period via Kepler's third law (m). */
 export const semiMajorAxisFromPeriod = (periodSeconds: number): number =>
   Math.cbrt((GM * periodSeconds * periodSeconds) / (4 * Math.PI * Math.PI));
+
+/** A position/velocity sample in any consistent frame (m, m/s), or undefined where unavailable. */
+export type StateAt = (t: Instant) => { p: Vec3; v: Vec3 } | undefined;
+
+/** Fractions of each interval probed by the error measurement. */
+const PROBE_FRACTIONS = [0.2, 1 / 3, 0.5, 2 / 3, 0.8] as const;
+
+/**
+ * Worst-case cubic-Hermite interpolation error for a sample grid, MEASURED against direct
+ * evaluation of `stateAt` at interior fractions of every interval (⅕, ⅓, ½, ⅔, ⅘).
+ *
+ * Why not only the midpoint: for an exact trajectory the Hermite error ∝ u²(1−u)² peaks at ½, but
+ * SGP4's velocity is not exactly d(position)/dt (especially for deep-space and strongly draggy
+ * orbits), and a slope mismatch contributes an error ∝ u(1−u)² that peaks at ⅓ (and u²(1−u) at ⅔).
+ * Intervals with a missing endpoint or probe are skipped.
+ */
+export function measureHermiteError(
+  stateAt: StateAt,
+  start: Instant,
+  stepSeconds: number,
+  durationSeconds: number,
+): { maxErrorM: number; intervals: number } {
+  const n = Math.max(1, Math.ceil(durationSeconds / stepSeconds));
+  let max = 0;
+  let intervals = 0;
+  let prev = stateAt(start);
+  for (let k = 1; k <= n; k++) {
+    const next = stateAt(start.plusSeconds(k * stepSeconds));
+    if (prev && next) {
+      for (const u of PROBE_FRACTIONS) {
+        const probe = stateAt(start.plusSeconds((k - 1 + u) * stepSeconds));
+        if (!probe) continue;
+        const est = hermitePosition(prev.p, prev.v, next.p, next.v, stepSeconds, u);
+        max = Math.max(
+          max,
+          Math.hypot(est[0] - probe.p[0], est[1] - probe.p[1], est[2] - probe.p[2]),
+        );
+      }
+      intervals++;
+    }
+    prev = next;
+  }
+  return { maxErrorM: max, intervals };
+}
+
+/**
+ * Choose a sample step whose MEASURED interpolation error is within `toleranceM`, starting from the
+ * closed-form `initialStepSeconds` (exact for Kepler motion) and refining by the h⁴ error law.
+ * This catches what the closed form cannot: strong drag, rapid decay and short-period terms.
+ */
+export function chooseVerifiedStep(
+  stateAt: StateAt,
+  start: Instant,
+  durationSeconds: number,
+  toleranceM: number,
+  initialStepSeconds: number,
+): { stepSeconds: number; maxErrorM: number; refinements: number } {
+  let step = Math.max(1, initialStepSeconds);
+  let m = measureHermiteError(stateAt, start, step, durationSeconds);
+  let refinements = 0;
+  while (m.maxErrorM > toleranceM && step > 1 && refinements < 8) {
+    // error ∝ h⁴ → scale h by (tol/err)^¼, with a 10 % margin and at most halving per pass
+    step = Math.max(1, step * Math.max(0.5, 0.9 * Math.pow(toleranceM / m.maxErrorM, 0.25)));
+    m = measureHermiteError(stateAt, start, step, durationSeconds);
+    refinements++;
+  }
+  return { stepSeconds: step, maxErrorM: m.maxErrorM, refinements };
+}

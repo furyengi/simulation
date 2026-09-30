@@ -9,6 +9,9 @@ import {
   semiMajorAxisFromPeriod,
   stateVector,
   suggestedStepSeconds,
+  chooseVerifiedStep,
+  measureHermiteError,
+  type StateAt,
   vec,
   type Vec3,
 } from '@simulation/physics';
@@ -216,6 +219,11 @@ export class OrbitalService {
     frame: FrameId;
     stepSeconds?: number;
     toleranceM?: number;
+    /**
+     * Verify the step by measuring the interpolation error against direct propagation and refine it
+     * until it is within tolerance. Default: on for up to 64 objects (cost ≈ 2× propagation).
+     */
+    verify?: boolean;
   }): EnvResult<{ windows: EphemerisWindow[]; stepSeconds: number }> {
     const { ids, start, frame } = req;
     if (req.count === undefined && req.durationSeconds === undefined) {
@@ -229,14 +237,33 @@ export class OrbitalService {
     if (missing.length) {
       return unavailable('UNKNOWN_OBJECT', `Unknown object(s): ${missing.slice(0, 5).join(', ')}`);
     }
-    const step =
-      req.stepSeconds ??
-      Math.min(
-        ...ids.map((id) => {
-          const e = this.entries.get(id)!;
-          return suggestedStepSeconds(e.semiMajorAxisM, e.set.omm.ECCENTRICITY, tol);
-        }),
-      );
+    const stateOf =
+      (id: string): StateAt =>
+      (t) => {
+        const r = this.entries.get(id)!.propagator.propagate(t);
+        return r.status === 'ok'
+          ? { p: vec(r.state.position), v: vec(r.state.velocity) }
+          : undefined;
+      };
+    const suggested = Math.min(
+      ...ids.map((id) => {
+        const e = this.entries.get(id)!;
+        return suggestedStepSeconds(e.semiMajorAxisM, e.set.omm.ECCENTRICITY, tol);
+      }),
+    );
+    let step = req.stepSeconds ?? suggested;
+    const verify = req.stepSeconds === undefined && (req.verify ?? ids.length <= 64);
+    if (verify) {
+      // Refine per object against direct propagation; the smallest step is used for all so the
+      // sample grids align.
+      const duration = req.durationSeconds ?? ((req.count ?? 2) - 1) * suggested;
+      for (const id of ids) {
+        step = Math.min(
+          step,
+          chooseVerifiedStep(stateOf(id), start, duration, tol, suggested).stepSeconds,
+        );
+      }
+    }
     if (!Number.isFinite(step) || step <= 0) return unsupported('BAD_STEP', 'invalid step');
     const count =
       req.count ?? Math.min(20_000, Math.max(2, Math.ceil((req.durationSeconds ?? 0) / step) + 1));
@@ -280,6 +307,9 @@ export class OrbitalService {
       velocitiesMps: vel[k]!,
       failures: fails[k]!,
       interpolationToleranceM: tol,
+      interpolationErrorMeasuredM: verify
+        ? measureHermiteError(stateOf(id), start, step, (count - 1) * step).maxErrorM
+        : null,
     }));
     return ok(
       { windows, stepSeconds: step },

@@ -1,0 +1,7 @@
+orekit-data-unzipped/orekit-data-main/Earth-Orientation-Parameters/IAU-1980/:
+total 3676
+-rw-r--r-- 1 runner runner 3763572 Sep  3 07:40 finals.all
+
+orekit-data-unzipped/orekit-data-main/Earth-Orientation-Parameters/IAU-2000/:
+total 3676
+-rw-r--r-- 1 runner runner 3763572 Sep  3 07:40 finals2000A.all

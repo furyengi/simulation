@@ -287,6 +287,9 @@ describe('Environment: orbital objects', () => {
     const { windows, stepSeconds } = value(r);
     const w = windows[0]!;
     expect(w.positionsM.length).toBe(120);
+    // ≤ 64 objects: the step was verified, and the measured interpolation error is reported.
+    expect(w.interpolationErrorMeasuredM).not.toBeNull();
+    expect(w.interpolationErrorMeasuredM!).toBeLessThanOrEqual(5);
     expect(stepSeconds).toBeGreaterThan(5);
     // sample 10 equals a direct state query
     const direct = value(

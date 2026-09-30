@@ -261,6 +261,11 @@ export const EphemerisWindowSchema = z.object({
   ),
   /** Worst-case cubic-Hermite interpolation error the step was sized for, m (an estimate, see docs). */
   interpolationToleranceM: z.number(),
+  /**
+   * Interpolation error MEASURED against direct propagation at interval midpoints over this window
+   * (m), when the step was verified; null when it was sized from the closed-form bound only.
+   */
+  interpolationErrorMeasuredM: z.number().nullable(),
 });
 export type EphemerisWindow = z.infer<typeof EphemerisWindowSchema>;
 
