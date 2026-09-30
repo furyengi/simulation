@@ -37,10 +37,13 @@ export interface OrekitEop {
 }
 export interface OrekitGeo {
   name: string;
+  /** The input triple Orekit converted to ECEF. */
   latRad: number;
   lonRad: number;
   heightM: number;
   ecef: Vec3;
+  /** Orekit's own inverse (ECEF → geodetic) of that ECEF point. */
+  back: { latRad: number; lonRad: number; heightM: number };
 }
 
 export function loadOrekit(): { states: OrekitState[]; eops: OrekitEop[]; geos: OrekitGeo[] } {
@@ -76,6 +79,7 @@ export function loadOrekit(): { states: OrekitState[]; eops: OrekitEop[]; geos: 
         lonRad: Number(f[3]),
         heightM: Number(f[4]),
         ecef: [Number(f[5]), Number(f[6]), Number(f[7])],
+        back: { latRad: Number(f[8]), lonRad: Number(f[9]), heightM: Number(f[10]) },
       });
     }
   }
@@ -191,34 +195,47 @@ export function compareStates(): Comparison {
 
 export interface GeoComparison {
   n: number;
+  /** Our geodetic→ECEF vs Orekit's ECEF for the same input triple. */
   maxForwardM: number;
-  maxInverseLatRad: number;
-  maxInverseLonRad: number;
-  maxInverseHeightM: number;
+  /** Our ECEF→geodetic vs the ORIGINAL input triple (the exact answer). */
+  ourInverse: { latRad: number; lonRad: number; heightM: number };
+  /** Orekit's ECEF→geodetic vs the ORIGINAL input triple. */
+  orekitInverse: { latRad: number; lonRad: number; heightM: number };
 }
+
+const angleDiff = (a: number, b: number): number =>
+  Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 
 export function compareGeodetic(): GeoComparison {
   const { geos } = loadOrekit();
   const res: GeoComparison = {
     n: 0,
     maxForwardM: 0,
-    maxInverseLatRad: 0,
-    maxInverseLonRad: 0,
-    maxInverseHeightM: 0,
+    ourInverse: { latRad: 0, lonRad: 0, heightM: 0 },
+    orekitInverse: { latRad: 0, lonRad: 0, heightM: 0 },
   };
   for (const g of geos) {
-    // Forward: our ECEF of Orekit's (round-tripped) geodetic triple vs Orekit's ECEF.
     const ours = geodeticToEcef(geodetic(g.latRad, g.lonRad, g.heightM));
     res.maxForwardM = Math.max(res.maxForwardM, norm(sub(ours, g.ecef)));
-    // Inverse: our geodetic of Orekit's ECEF vs Orekit's own round-trip result.
     const inv = ecefToGeodetic(g.ecef[0], g.ecef[1], g.ecef[2]);
-    res.maxInverseLatRad = Math.max(res.maxInverseLatRad, Math.abs(inv.latRad - g.latRad));
-    const dLon = Math.abs(
-      Math.atan2(Math.sin(inv.lonRad - g.lonRad), Math.cos(inv.lonRad - g.lonRad)),
+    const nearPole = Math.abs(g.latRad) > 1.5; // longitude is ill-defined there
+    res.ourInverse.latRad = Math.max(res.ourInverse.latRad, Math.abs(inv.latRad - g.latRad));
+    res.ourInverse.heightM = Math.max(res.ourInverse.heightM, Math.abs(inv.heightM - g.heightM));
+    res.orekitInverse.latRad = Math.max(
+      res.orekitInverse.latRad,
+      Math.abs(g.back.latRad - g.latRad),
     );
-    // Longitude is meaningless at the poles; compare it only away from them.
-    if (Math.abs(g.latRad) < 1.5) res.maxInverseLonRad = Math.max(res.maxInverseLonRad, dLon);
-    res.maxInverseHeightM = Math.max(res.maxInverseHeightM, Math.abs(inv.heightM - g.heightM));
+    res.orekitInverse.heightM = Math.max(
+      res.orekitInverse.heightM,
+      Math.abs(g.back.heightM - g.heightM),
+    );
+    if (!nearPole) {
+      res.ourInverse.lonRad = Math.max(res.ourInverse.lonRad, angleDiff(inv.lonRad, g.lonRad));
+      res.orekitInverse.lonRad = Math.max(
+        res.orekitInverse.lonRad,
+        angleDiff(g.back.lonRad, g.lonRad),
+      );
+    }
     res.n++;
   }
   return res;

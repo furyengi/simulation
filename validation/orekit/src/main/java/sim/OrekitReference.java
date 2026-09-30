@@ -75,7 +75,7 @@ public final class OrekitReference {
                     row(out, "state", name, iso, "TEME", pvTeme);
                     row(out, "state", name, iso, "ITRF", pvItrf);
                     row(out, "state", name, iso, "GCRF", pvGcrf);
-                    out.println(String.format(Locale.ROOT, "eop,%s,%s,%.12e,%.12e,%.12e,%.12e",
+                    out.println(String.format(Locale.ROOT, "eop,%s,%s,%.15e,%.15e,%.15e,%.15e",
                             name, iso,
                             eop.getUT1MinusUTC(date),
                             eop.getPoleCorrection(date).getXp(),
@@ -95,7 +95,7 @@ public final class OrekitReference {
                 GeodeticPoint gp = new GeodeticPoint(Math.toRadians(s[0]), Math.toRadians(s[1]), s[2]);
                 Vector3D p = earth.transform(gp);
                 GeodeticPoint back = earth.transform(p, itrf, any);
-                out.println(String.format(Locale.ROOT, "geo,site(%.4f;%.4f;%.1f),%.15e,%.15e,%.9e,%.9e,%.9e,%.9e,%.15e,%.15e,%.9e",
+                out.println(String.format(Locale.ROOT, "geo,site(%.4f;%.4f;%.1f),%.15e,%.15e,%.15e,%.15e,%.15e,%.15e,%.15e,%.15e,%.15e",
                         s[0], s[1], s[2], gp.getLatitude(), gp.getLongitude(), gp.getAltitude(),
                         p.getX(), p.getY(), p.getZ(),
                         back.getLatitude(), back.getLongitude(), back.getAltitude()));
@@ -106,7 +106,7 @@ public final class OrekitReference {
     private static void row(PrintWriter out, String kind, String name, String iso, String frame, PVCoordinates pv) {
         Vector3D p = pv.getPosition();
         Vector3D v = pv.getVelocity();
-        out.println(String.format(Locale.ROOT, "%s,%s,%s,%s,%.9e,%.9e,%.9e,%.12e,%.12e,%.12e",
+        out.println(String.format(Locale.ROOT, "%s,%s,%s,%s,%.15e,%.15e,%.15e,%.15e,%.15e,%.15e",
                 kind, name, iso, frame, p.getX(), p.getY(), p.getZ(), v.getX(), v.getY(), v.getZ()));
     }
 
