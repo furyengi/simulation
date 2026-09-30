@@ -64,6 +64,10 @@ rediscover it.
   1.1 cm position difference.
 - ERFA `nut00b`, `pfw06`, `obl06`, `gmst06`, `era00`, `pom00`: agreement to the test suite's own
   tolerances (1e-12 … 1e-16).
+- **Orekit 13.1.8** (IAU 2006/2000A CIO chain, fed the same EOP): pure ITRF ↔ GCRF 2.6 cm (0.13 mas)
+  at GEO radius. TEME ↔ Earth-fixed/GCRF differ by ≈ 36 mas (1.2 m at LEO, 7 m at GEO) because the two
+  tools define the TEME pole differently (IAU 1976/1980 vs 2006/2000B theory); see
+  [validation/orekit](../validation/orekit/README.md).
 
 ## Why not Astronomy Engine for frames?
 

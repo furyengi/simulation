@@ -16,10 +16,18 @@ giving its origin and retrieval date, so results are reproducible offline.
 
 ## Cases
 
-_Cases are added as each subsystem lands; see [docs/phase-1-status.md](../docs/phase-1-status.md)._
+| Case                                     | Question                                            | Reference                                  | Headline result                                                           |
+| ---------------------------------------- | --------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| [ephemeris](ephemeris/README.md)         | Sun/Moon direction vs DE431                         | JPL Horizons (1972–2099)                   | Sun ≤ 2.8″, Moon ≤ 23.5″                                                  |
+| [sgp4](sgp4/README.md)                   | SGP4 implementation                                 | Vallado verification suite (636 vectors)   | 8 µm; 964 m only for the documented Lyddane case                          |
+| [interpolation](interpolation/README.md) | Error of client-side Hermite interpolation          | direct SGP4                                | closed-form step under-delivers for decaying orbits; verified step ≤ 25 m |
+| [orekit](orekit/README.md)               | SGP4, frames, geodetic vs a flight-dynamics library | Orekit 13.1.8 (CI-generated)               | 0.08 mm; 2.6 cm at GEO; TEME definition 36 mas                            |
+| [nrlmsise00](nrlmsise00/README.md)       | WASM build + wrapper vs the original                | C reference built in CI (2 100 conditions) | ≤ 1.0 × 10⁻⁶ relative                                                     |
 
-Unit-level reference checks that live next to the code (`packages/*/test`) — SOFA/ERFA vectors for
-frames, Vallado's worked example — are cross-referenced from each case's write-up.
+Unit-level reference checks that live next to the code (`packages/*/test`) — ERFA/SOFA vectors and
+the Vallado/Kelso/Seago/Cefola LEO case for frames, Somigliana's formula for gravity, a brute-force
+numerical integration for the eclipse fraction — are cross-referenced from the relevant docs
+([reference frames](../docs/reference-frames.md)).
 
 ## Adding a case
 
