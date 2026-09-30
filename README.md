@@ -7,8 +7,10 @@ will eventually operate — satellites, aircraft, balloons, lunar vehicles and o
 It is built environment-first. Vehicles obey the environment; the environment never bends to make a
 picture look good.
 
-> **Status: Phase 1 (environment) — in development.** Nothing in this repository lets you design or
-> fly a vehicle yet, by intent. See [Phase 1](#phase-1) and [Out of scope](#out-of-scope-in-phase-1).
+> **Status: Phase 1 (environment) — feature-complete against its definition of done**, with known
+> limitations listed in [docs/phase-1-status.md](docs/phase-1-status.md). Nothing in this repository
+> lets you design or fly a vehicle yet, by intent. See [Phase 1](#phase-1) and
+> [Out of scope](#out-of-scope-in-phase-1).
 
 ## Contents
 
@@ -141,7 +143,7 @@ npm ci
 cp .env.example .env      # optional; nothing is required to run
 npm run check             # format, lint, typecheck, unit tests
 npm run validate          # validation cases against reference results
-npm run dev               # server + web (see docs/development.md)
+npm run dev               # API server :8787 + viewer :5173 (see docs/development.md)
 ```
 
 Configuration is via environment variables (see [.env.example](.env.example)). **Never commit
@@ -184,7 +186,7 @@ docs                Architecture, policies, ADRs, data-source notes
 - [Architecture](docs/architecture.md) · [ADRs](docs/adr/)
 - [Units policy](docs/units-policy.md) · [Time](docs/time.md) · [Reference frames](docs/reference-frames.md)
 - [Provenance](docs/provenance.md) · [Data sources](docs/data-sources.md)
-- [Phase 1 status](docs/phase-1-status.md)
+- [Phase 1 status](docs/phase-1-status.md) · [Performance](docs/performance.md) · [Development](docs/development.md)
 
 ## Licence
 
