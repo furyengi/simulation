@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.github.furyengi.simulation</groupId>
+  <artifactId>orekit-reference</artifactId>
+  <version>0.1.0</version>
+  <name>Simulation: Orekit reference generator</name>
+  <description>
+    Generates reference results with Orekit (Apache-2.0, https://www.orekit.org) for comparison with
+    Simulation's own implementation. Run by CI (.github/workflows/orekit-reference.yml); the
+    committed output lives in ../reference/.
+  </description>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <orekit.version>13.1.8</orekit.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.orekit</groupId>
+      <artifactId>orekit</artifactId>
+      <version>${orekit.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <configuration>
+          <mainClass>sim.OrekitReference</mainClass>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

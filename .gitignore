@@ -22,3 +22,6 @@ Thumbs.db
 
 # Claude Code local state
 .claude/
+
+# Java build output
+target/

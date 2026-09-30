@@ -1,0 +1,43 @@
+name: Generate Orekit reference results
+
+# Orekit (Java) is the established reference implementation we compare against. The JVM is needed
+# only to GENERATE reference data; the output is committed to validation/orekit/reference and the
+# normal test run compares against it offline. Trigger manually after changing the inputs.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Download Orekit data (leap seconds, EOP, ...)
+        run: |
+          curl -sSL -o orekit-data.zip https://gitlab.orekit.org/orekit/orekit-data/-/archive/main/orekit-data-main.zip
+          unzip -q orekit-data.zip -d orekit-data-unzipped
+          ls orekit-data-unzipped/*/
+      - name: Run the generator
+        working-directory: validation/orekit
+        run: |
+          mvn -B -q compile exec:java \
+            -Dexec.args="$GITHUB_WORKSPACE/orekit-data-unzipped/orekit-data-main $GITHUB_WORKSPACE/validation/orekit/inputs/tles.txt $GITHUB_WORKSPACE/orekit-reference.csv"
+          wc -l "$GITHUB_WORKSPACE/orekit-reference.csv"
+          head -12 "$GITHUB_WORKSPACE/orekit-reference.csv"
+      - name: Record the EOP file coverage Orekit used
+        run: |
+          ls -l orekit-data-unzipped/orekit-data-main/Earth-Orientation-Parameters/*/ > orekit-eop-files.txt || true
+          cat orekit-eop-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: orekit-reference
+          path: |
+            orekit-reference.csv
+            orekit-eop-files.txt

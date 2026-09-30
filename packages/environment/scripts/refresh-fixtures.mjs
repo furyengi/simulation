@@ -22,6 +22,10 @@ const RESOURCES = [
     url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json',
   },
   {
+    file: 'celestrak-gp-stations.tle',
+    url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle',
+  },
+  {
     file: 'celestrak-sw-last5years.csv',
     url: 'https://celestrak.org/SpaceData/SW-Last5Years.csv',
     note: 'Trimmed to rows dated 2025-01-01 and later (header kept); columns unchanged.',
