@@ -1,3 +1,6 @@
 * text=auto eol=lf
 *.png binary
 *.jpg binary
+
+# Reference data is committed byte-for-byte from its source.
+validation/**/reference/** -text
