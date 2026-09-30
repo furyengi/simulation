@@ -190,3 +190,116 @@ export const WireResultSchema = <T extends z.ZodType>(value: T) =>
       provenance: z.array(ProvenanceSchema).optional(),
     }),
   ]);
+
+// ---- Orbital objects ---------------------------------------------------------------------
+
+export const OrbitalElementsSummarySchema = z.object({
+  epochUtc: IsoUtcSchema,
+  periodSeconds: z.number(),
+  inclinationDeg: z.number(),
+  eccentricity: z.number(),
+  meanMotionRevPerDay: z.number(),
+  raanDeg: z.number(),
+  argPerigeeDeg: z.number(),
+  meanAnomalyDeg: z.number(),
+  bstar: z.number(),
+  regime: z.enum(['near', 'deep']),
+  source: z.object({
+    provider: z.string(),
+    dataset: z.string(),
+    retrievedAtUtc: IsoUtcSchema.optional(),
+  }),
+});
+export type OrbitalElementsSummary = z.infer<typeof OrbitalElementsSummarySchema>;
+
+export const OrbitalObjectStateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  noradCatId: z.number().int(),
+  intlDesignator: z.string(),
+  timeUtc: IsoUtcSchema,
+  frame: FrameIdSchema,
+  positionM: Vec3Schema,
+  velocityMps: Vec3Schema,
+  speedMps: z.number(),
+  /** Sub-satellite point and height above the WGS84 ellipsoid (derived via ITRF). */
+  geodetic: z.object({ latDeg: z.number(), lonDeg: z.number(), heightM: z.number() }),
+  elements: OrbitalElementsSummarySchema,
+});
+export type OrbitalObjectState = z.infer<typeof OrbitalObjectStateSchema>;
+
+export const OrbitalCatalogEntrySchema = z.object({
+  id: z.string(),
+  noradCatId: z.number().int(),
+  name: z.string(),
+  intlDesignator: z.string(),
+  epochUtc: IsoUtcSchema,
+  periodSeconds: z.number(),
+  inclinationDeg: z.number(),
+  eccentricity: z.number(),
+  regime: z.enum(['near', 'deep']),
+  dataset: z.string(),
+});
+export type OrbitalCatalogEntry = z.infer<typeof OrbitalCatalogEntrySchema>;
+
+/**
+ * A window of engine-computed samples for one object, for client-side interpolation.
+ * `positionsM` / `velocitiesMps` are flat [x0,y0,z0,x1,…]; sample i is at
+ * `startUtc + i·stepSeconds` (computed from i, not accumulated). Samples where SGP4 reported an
+ * error are NaN-free: they are listed in `failures` and their slots hold 0.
+ */
+export const EphemerisWindowSchema = z.object({
+  id: z.string(),
+  frame: FrameIdSchema,
+  startUtc: IsoUtcSchema,
+  stepSeconds: z.number(),
+  count: z.number().int(),
+  positionsM: z.array(z.number()),
+  velocitiesMps: z.array(z.number()),
+  failures: z.array(
+    z.object({ index: z.number().int(), code: z.number().int(), message: z.string() }),
+  ),
+  /** Worst-case cubic-Hermite interpolation error the step was sized for, m (an estimate, see docs). */
+  interpolationToleranceM: z.number(),
+});
+export type EphemerisWindow = z.infer<typeof EphemerisWindowSchema>;
+
+// ---- Aircraft (separate from simulated objects) -------------------------------------------
+
+export const AircraftStateSchema = z.object({
+  id: z.string(),
+  icao24: z.string(),
+  callsign: z.string().nullable(),
+  originCountry: z.string(),
+  positionTimeUtc: IsoUtcSchema.nullable(),
+  lastContactUtc: IsoUtcSchema.nullable(),
+  lonDeg: z.number().nullable(),
+  latDeg: z.number().nullable(),
+  baroAltitudeM: z.number().nullable(),
+  geoAltitudeM: z.number().nullable(),
+  onGround: z.boolean(),
+  groundSpeedMps: z.number().nullable(),
+  trackDeg: z.number().nullable(),
+  verticalRateMps: z.number().nullable(),
+  squawk: z.string().nullable(),
+  positionSource: z.enum(['ADS-B', 'ASTERIX', 'MLAT', 'FLARM', 'UNKNOWN']),
+});
+export type AircraftStateWire = z.infer<typeof AircraftStateSchema>;
+
+export const AircraftLayerSchema = z.object({
+  observedAtUtc: IsoUtcSchema,
+  retrievedAtUtc: IsoUtcSchema,
+  bbox: z
+    .object({
+      latMinDeg: z.number(),
+      lonMinDeg: z.number(),
+      latMaxDeg: z.number(),
+      lonMaxDeg: z.number(),
+    })
+    .nullable(),
+  count: z.number().int(),
+  aircraft: z.array(AircraftStateSchema),
+  /** Always present: coverage is limited to the provider's receivers. */
+  coverageNotice: z.string(),
+});
+export type AircraftLayer = z.infer<typeof AircraftLayerSchema>;
